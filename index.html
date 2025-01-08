@@ -85,14 +85,11 @@
 
     <script>
         const clearButton = document.getElementById('clear-storage');
-        // Añadir un evento de clic al botón
         clearButton.addEventListener('click', () => {
-            // Borrar todo el localStorage
             localStorage.clear();
 
-            // Opcional: mensaje de confirmación o recarga de la página
             alert('El localStorage ha sido borrado.');
-            location.reload(); // Recarga la página para restablecer el estado
+            location.reload();
         });
         const respondido = JSON.parse(localStorage.getItem('respondido') || '[]');
         const tempArray = [];
@@ -2936,7 +2933,6 @@
         localStorage.setItem('respondido', JSON.stringify(tempArray))
 
         console.log(preguntas)
-        // Para alternar entre modo oscuro y claro
         const modeToggleButton = document.getElementById('mode-toggle');
         const bodyElement = document.body;
 
@@ -2950,7 +2946,7 @@
         checkAciertosyFallos();
         function getRespuestas(sheet, row) {
             const temp = [];
-            for (let fila = row; fila < row + 4; fila++) { // Iterar sobre filas
+            for (let fila = row; fila < row + 4; fila++) {
                 const cellAddress = XLSX.utils.encode_cell({ r: fila, c: 1 });
                 const cell = sheet[cellAddress];
                 if (cell) {
@@ -2962,7 +2958,7 @@
 
         function getRespuestaCorrecta(sheet, row) {
             let temp = '';
-            for (let fila = row; fila < row + 4; fila++) { // Iterar sobre filas
+            for (let fila = row; fila < row + 4; fila++) {
                 const cellAddress = XLSX.utils.encode_cell({ r: fila, c: 2 });
                 const cell = sheet[cellAddress];
                 if (cell && cell.v.toLowerCase() == 'ok') {
@@ -2975,21 +2971,17 @@
             return temp;
         }
 
-        // Función para renderizar las preguntas
         function renderQuestions() {
             const container = document.getElementById('questions-container');
-            container.innerHTML = ''; // Limpiar contenido previo
+            container.innerHTML = '';
             preguntas.forEach((row, index) => {
-                // Crear un contenedor para la pregunta
                 const questionDiv = document.createElement('div');
                 questionDiv.className = 'list-group-item';
 
-                // Agregar el texto de la pregunta
                 const questionText = document.createElement('h5');
                 questionText.textContent = `${index + 1} --> ${row.pregunta}`;
                 questionDiv.appendChild(questionText);
 
-                // Agregar las opciones como radio buttons
                 const optionsDiv = document.createElement('div');
                 optionsDiv.className = 'mt-2';
 
@@ -3003,19 +2995,18 @@
                     input.name = `question-${index}`;
                     input.id = `question-${index}-option-${optionIndex}`;
                     input.addEventListener('click', () => {
-                        checkResponse(index, value, input); // Llamar a la función con el índice, el valor y el input
+                        checkResponse(index, value, input);
                     });
 
                     const respuestas = JSON.parse(localStorage.getItem('respondido'));
 
                     const label = document.createElement('label');
                     label.className = 'form-check-label';
-                    label.htmlFor = input.id; // Asociar el label con el input
+                    label.htmlFor = input.id;
                     label.textContent = value;
                     optionDiv.appendChild(input);
                     optionDiv.appendChild(label);
                     optionsDiv.appendChild(optionDiv);
-                    // Añadir feedback si ya se respondió
                     if (respuestas && respuestas[index] == value) {
                         input.checked = true;
 
@@ -3075,12 +3066,11 @@
         function checkResponse(index, value, inputElement) {
             console.log(`Se hizo clic en la opción ${index}: ${value}`);
 
-            // Limpiar cualquier estilo previo de la respuesta
             const allInputs = inputElement.closest('.form-check').parentNode.children;
 
             const existing = document.getElementById(`feedBack-${index}`);
             if (existing) {
-                existing.parentNode.removeChild(existing); // Eliminar el elemento del DOM
+                existing.parentNode.removeChild(existing);
             }
             const feedbackMessage = document.createElement('p');
             feedbackMessage.className = 'mt-2';
@@ -3097,7 +3087,6 @@
 
             }
 
-            // Añadir el mensaje de retroalimentación debajo de la opción seleccionada
             inputElement.closest('.form-check').appendChild(feedbackMessage);
         }
 
