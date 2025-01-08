@@ -45,6 +45,21 @@
             right: 20px;
             z-index: 1000;
         }
+
+        .stats {
+            min-width: 200px;
+            position: sticky;
+            top: 0px;
+            z-index: 1;
+            background-color: #f8f9fa;
+        }
+
+        #clear-storage {
+            right: 5px;
+            position: absolute;
+            bottom: 5px;
+
+        }
     </style>
 </head>
 
@@ -52,13 +67,35 @@
     <button id="mode-toggle" class="btn btn-secondary">Modo Oscuro</button>
 
     <div class="container my-5">
-        <h1 class="mb-4">Preguntas GCP Associate Cloud Engineer - Google Cloud Certification </h1>
+        <div id="stats-container" class="border p-3 stats">
+            <h1 class="mb-4">Preguntas GCP Associate Cloud Engineer - Google Cloud Certification </h1>
+            <p>
+                <span><strong>Aciertos:</strong> <span id="correct" style="color: #28a745;">0</span></span> |
+                <span><strong>Fallos:</strong> <span id="wrong" style="color: red;">0</span></span> |
+                <span><strong>Sin responder:</strong> <span id="unanswered" style="color: yellowgreen;">0</span></span>
+            </p>
+            <button id="clear-storage" class="btn btn-danger">Borrar respuestas</button>
+
+        </div>
+
         <div id="questions-container" class="list-group">
             <!-- Las preguntas y respuestas serán insertadas aquí dinámicamente -->
         </div>
     </div>
 
     <script>
+        const clearButton = document.getElementById('clear-storage');
+        // Añadir un evento de clic al botón
+        clearButton.addEventListener('click', () => {
+            // Borrar todo el localStorage
+            localStorage.clear();
+
+            // Opcional: mensaje de confirmación o recarga de la página
+            alert('El localStorage ha sido borrado.');
+            location.reload(); // Recarga la página para restablecer el estado
+        });
+        const respondido = JSON.parse(localStorage.getItem('respondido') || '[]');
+        const tempArray = [];
         const preguntas =
             [
                 {
@@ -2892,16 +2929,25 @@
                     "correcta": "B. Use the gcloud container clusters create-auto command to create an autopilot cluster and deploy the application to it."
                 }
             ]
+        preguntas.forEach((res, index) => {
+            res.respondido = respondido[index];
+            tempArray.push(res.respondido);
+        })
+        localStorage.setItem('respondido', JSON.stringify(tempArray))
 
+        console.log(preguntas)
         // Para alternar entre modo oscuro y claro
         const modeToggleButton = document.getElementById('mode-toggle');
         const bodyElement = document.body;
 
         modeToggleButton.addEventListener('click', () => {
             bodyElement.classList.toggle('dark-mode');
+            document.getElementById('stats-container').style = bodyElement.classList.contains('dark-mode') ? 'background:#343a40' : 'background:#f8f9fa';
             modeToggleButton.textContent = bodyElement.classList.contains('dark-mode') ? 'Modo Claro' : 'Modo Oscuro';
         });
 
+        renderQuestions();
+        checkAciertosyFallos();
         function getRespuestas(sheet, row) {
             const temp = [];
             for (let fila = row; fila < row + 4; fila++) { // Iterar sobre filas
@@ -2933,7 +2979,6 @@
         function renderQuestions() {
             const container = document.getElementById('questions-container');
             container.innerHTML = ''; // Limpiar contenido previo
-
             preguntas.forEach((row, index) => {
                 // Crear un contenedor para la pregunta
                 const questionDiv = document.createElement('div');
@@ -2957,24 +3002,74 @@
                     input.type = 'radio';
                     input.name = `question-${index}`;
                     input.id = `question-${index}-option-${optionIndex}`;
-                    // Añadir evento de clic para llamar a la función
                     input.addEventListener('click', () => {
                         checkResponse(index, value, input); // Llamar a la función con el índice, el valor y el input
                     });
+
+                    const respuestas = JSON.parse(localStorage.getItem('respondido'));
 
                     const label = document.createElement('label');
                     label.className = 'form-check-label';
                     label.htmlFor = input.id; // Asociar el label con el input
                     label.textContent = value;
-
                     optionDiv.appendChild(input);
                     optionDiv.appendChild(label);
                     optionsDiv.appendChild(optionDiv);
+                    // Añadir feedback si ya se respondió
+                    if (respuestas && respuestas[index] == value) {
+                        input.checked = true;
+
+                        const feedbackMessage = document.createElement('p');
+                        feedbackMessage.className = 'mt-2';
+                        feedbackMessage.id = `feedBack-${index}`;
+
+                        if (preguntas[index].correcta == value) {
+                            feedbackMessage.textContent = "¡Respuesta correcta!";
+                            feedbackMessage.style.color = 'green';
+                        } else {
+                            feedbackMessage.textContent = "Respuesta incorrecta.";
+                            feedbackMessage.style.color = 'red';
+                        }
+
+                        optionDiv.appendChild(feedbackMessage);
+                    }
+
+
                 });
 
                 questionDiv.appendChild(optionsDiv);
                 container.appendChild(questionDiv);
             });
+
+        }
+        function checkAciertosyFallos() {
+            const respuestas = JSON.parse(localStorage.getItem('respondido'));
+            const aciertos = [];
+            const fallos = [];
+            const sinresponder = []
+            respuestas.forEach((element, index) => {
+                if (element != null && element != undefined) {
+                    if (preguntas[index].correcta == element) {
+                        aciertos.push('');
+                    } else {
+                        fallos.push('');
+                    }
+                } else {
+                    sinresponder.push('');
+                }
+            });
+            document.getElementById('correct').textContent = aciertos.length
+            document.getElementById('wrong').textContent = fallos.length
+            document.getElementById('unanswered').textContent = sinresponder.length
+        }
+
+        function setRespuestaLocalStorage(index, value) {
+            const respuestas = JSON.parse(localStorage.getItem('respondido'));
+            if (respuestas[index] == undefined || respuestas[index] == null) {
+                respuestas[index] = value
+            }
+            localStorage.setItem('respondido', JSON.stringify(respuestas));
+            checkAciertosyFallos();
         }
 
         function checkResponse(index, value, inputElement) {
@@ -2982,7 +3077,7 @@
 
             // Limpiar cualquier estilo previo de la respuesta
             const allInputs = inputElement.closest('.form-check').parentNode.children;
-  
+
             const existing = document.getElementById(`feedBack-${index}`);
             if (existing) {
                 existing.parentNode.removeChild(existing); // Eliminar el elemento del DOM
@@ -2992,18 +3087,20 @@
             feedbackMessage.id = `feedBack-${index}`
 
             if (preguntas[index].correcta == value) {
+                setRespuestaLocalStorage(index, value)
                 feedbackMessage.textContent = "¡Respuesta correcta!";
                 feedbackMessage.style.color = 'green';
             } else {
                 feedbackMessage.textContent = "Respuesta incorrecta.";
                 feedbackMessage.style.color = 'red';
+                setRespuestaLocalStorage(index, value)
+
             }
 
             // Añadir el mensaje de retroalimentación debajo de la opción seleccionada
             inputElement.closest('.form-check').appendChild(feedbackMessage);
         }
 
-        renderQuestions();
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
